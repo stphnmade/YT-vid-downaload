@@ -1,7 +1,9 @@
 # agents.md
+
 ## Cross Platform YouTube Downloader Desktop App (MVP)
 
 ### Project codename
+
 YT Download App
 
 ---
@@ -18,6 +20,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 ## 2. MVP scope lock (do not expand without approval)
 
 ### Supported features
+
 - Platforms: macOS and Windows
 - Input: YouTube URLs only
 - Formats: MP4 video or MP3 audio
@@ -30,6 +33,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 - Cancel active download
 
 ### Explicit non goals
+
 - No batch downloads
 - No multiple concurrent downloads
 - No account system
@@ -43,11 +47,13 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 ## 3. UX flow
 
 ### First launch
+
 1. App opens to main screen directly
 2. Save path defaults to OS Downloads
 3. No onboarding wizard for MVP
 
 ### Standard flow
+
 1. User pastes YouTube link
 2. User selects MP4 or MP3
 3. User clicks Download
@@ -56,6 +62,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 6. History list updates
 
 ### Error flow
+
 - Invalid URL shows inline error
 - Non YouTube URL rejected
 - Download failure shows readable message
@@ -66,6 +73,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 ## 4. UI and design rules
 
 ### Visual style
+
 - Minimalist, single card centered layout
 - Sprite like or pixel inspired font allowed for headers
 - Standard readable font for body text
@@ -73,10 +81,12 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 - Focus on clarity over decoration
 
 ### Iconography
+
 - Use Lucide React and or Heroicons React
 - Icons for actions only, not decoration
 
 ### Layout rules
+
 - No unnecessary scrolling
 - History panel may scroll internally if needed
 - Disable inputs during active download
@@ -86,6 +96,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 ## 5. Technical architecture
 
 ### High level
+
 - Electron for desktop shell and UI
 - React for renderer UI
 - Python backend using yt-dlp
@@ -93,6 +104,7 @@ This MVP prioritizes reliability, clarity, and contributor friendliness over fea
 - Python process launched and managed by Electron
 
 ### Data flow
+
 Renderer → Electron IPC → Python HTTP API  
 Python → Electron → Renderer UI update
 
