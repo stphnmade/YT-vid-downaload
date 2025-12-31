@@ -1,0 +1,10 @@
+services:
+  downloader:
+    build:
+      context: .
+      dockerfile: infra/docker/downloader.Dockerfile
+    image: yt-downloader
+    ports:
+      - "4545:4545"
+    environment:
+      - YT_DOWNLOADER_HOST=0.0.0.0

@@ -1,0 +1,19 @@
+appId: com.steph.yt-download-app
+productName: YT Download App
+asar: false
+directories:
+  output: dist
+files:
+  - "dist/renderer/**"
+  - "src/main/**"
+  - "src/preload/**"
+  - "package.json"
+extraResources:
+  - from: "../services/downloader"
+    to: "services/downloader"
+mac:
+  target:
+    - dmg
+win:
+  target:
+    - nsis

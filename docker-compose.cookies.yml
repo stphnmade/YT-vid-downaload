@@ -1,0 +1,6 @@
+services:
+  downloader:
+    environment:
+      - YT_DLP_COOKIES=/cookies/cookies.txt
+    volumes:
+      - ${YT_DLP_COOKIES_PATH}:/cookies/cookies.txt:ro

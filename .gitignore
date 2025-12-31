@@ -1,0 +1,17 @@
+node_modules/
+apps/**/node_modules/
+dist/
+out/
+.vite/
+*.log
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+.DS_Store
+Thumbs.db
