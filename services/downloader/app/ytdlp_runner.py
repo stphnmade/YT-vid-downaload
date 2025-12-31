@@ -144,6 +144,47 @@ def _detect_cookies_browser() -> str | None:
     return None
 
 
+def _extract_config_value(line: str) -> str | None:
+    if "=" in line:
+        _, value = line.split("=", 1)
+    else:
+        parts = line.split(None, 1)
+        if len(parts) < 2:
+            return None
+        value = parts[1]
+    value = value.strip().strip('"').strip("'")
+    return value or None
+
+
+def _load_cookie_settings_from_config() -> tuple[str | None, str | None]:
+    config_path = os.environ.get("YT_DLP_CONFIG")
+    if not config_path:
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "yt-dlp.conf"))
+    if not config_path or not os.path.exists(config_path):
+        return None, None
+
+    cookiefile = None
+    cookiesfrombrowser = None
+    with open(config_path, "r", encoding="utf-8") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("--cookies-from-browser"):
+                value = _extract_config_value(line)
+                if value:
+                    cookiesfrombrowser = value
+                continue
+            if line.startswith("--cookies"):
+                value = _extract_config_value(line)
+                if value:
+                    if not os.path.isabs(value):
+                        value = os.path.abspath(os.path.join(os.path.dirname(config_path), value))
+                    cookiefile = value
+
+    return cookiefile, cookiesfrombrowser
+
+
 def _run_with_ytdlp(job: DownloadJob) -> None:
     def progress_hook(data: dict) -> None:
         if job.cancel_event.is_set():
@@ -172,8 +213,9 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
         "progress_hooks": [progress_hook],
     }
 
-    cookie_file = os.environ.get("YT_DLP_COOKIES")
-    cookies_from_browser = os.environ.get("YT_DLP_COOKIES_BROWSER")
+    config_cookie_file, config_cookies_from_browser = _load_cookie_settings_from_config()
+    cookie_file = os.environ.get("YT_DLP_COOKIES") or config_cookie_file
+    cookies_from_browser = os.environ.get("YT_DLP_COOKIES_BROWSER") or config_cookies_from_browser
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
     elif cookies_from_browser:

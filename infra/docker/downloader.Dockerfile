@@ -6,6 +6,7 @@ COPY services/downloader/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY services/downloader/app app
+COPY services/downloader/yt-dlp.conf yt-dlp.conf
 
 EXPOSE 4545
 

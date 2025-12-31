@@ -30,9 +30,11 @@ Or manually:
    - PowerShell: `$env:YT_DOWNLOADER_API_URL='http://127.0.0.1:4545'; npm run dev`
 
 ## Troubleshooting
-- YouTube "confirm you're not a bot" errors can require cookies. Set one of:
+- YouTube "confirm you're not a bot" errors can require cookies. Options:
   - `YT_DLP_COOKIES=/path/to/cookies.txt`
   - `YT_DLP_COOKIES_BROWSER=chrome` (or edge/firefox)
+  - `services/downloader/yt-dlp.conf` (default uses `--cookies-from-browser chrome`)
+    - Change the browser there or set `YT_DLP_CONFIG=/path/to/yt-dlp.conf`
   - Local backend will auto-detect Chrome/Edge/Firefox cookies if present.
   - Docker: set `YT_DLP_COOKIES_PATH` and use `docker-compose.cookies.yml`
     - Bash: `YT_DLP_COOKIES_PATH=/path/to/cookies.txt docker compose -f docker-compose.yml -f docker-compose.cookies.yml up -d --build`
