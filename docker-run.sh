@@ -8,7 +8,21 @@ COMPOSE_COOKIES_FILE="$ROOT_DIR/docker-compose.cookies.yml"
 
 compose_args=(-f "$COMPOSE_FILE")
 
-read -r -p "Path to cookies.txt (leave blank to skip): " cookies_path
+default_cookies_candidates=(
+  "$ROOT_DIR/cookies.txt"
+  "$ROOT_DIR/cookies"
+)
+
+read -r -p "Path to cookies.txt (leave blank to use ./cookies.txt or skip): " cookies_path
+if [[ -z "$cookies_path" ]]; then
+  for candidate in "${default_cookies_candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      cookies_path="$candidate"
+      echo "Using default cookies at: $cookies_path"
+      break
+    fi
+  done
+fi
 if [[ -n "$cookies_path" ]]; then
   if [[ ! -f "$cookies_path" ]]; then
     echo "cookies.txt not found at: $cookies_path"

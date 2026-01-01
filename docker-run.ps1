@@ -7,7 +7,20 @@ $composeCookiesFile = Join-Path $rootDir "docker-compose.cookies.yml"
 
 $composeArgs = @("-f", $composeFile)
 
-$cookiesPath = Read-Host "Path to cookies.txt (leave blank to skip)"
+$defaultCookiesCandidates = @(
+  (Join-Path $rootDir "cookies.txt"),
+  (Join-Path $rootDir "cookies")
+)
+$cookiesPath = Read-Host "Path to cookies.txt (leave blank to use .\\cookies.txt or skip)"
+if (-not $cookiesPath) {
+  foreach ($candidate in $defaultCookiesCandidates) {
+    if (Test-Path $candidate) {
+      $cookiesPath = $candidate
+      Write-Host "Using default cookies at: $cookiesPath"
+      break
+    }
+  }
+}
 if ($cookiesPath) {
   if (-not (Test-Path $cookiesPath)) {
     Write-Host "cookies.txt not found at: $cookiesPath"

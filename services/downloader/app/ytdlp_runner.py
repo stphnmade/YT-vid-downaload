@@ -214,8 +214,20 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
     }
 
     config_cookie_file, config_cookies_from_browser = _load_cookie_settings_from_config()
-    cookie_file = os.environ.get("YT_DLP_COOKIES") or config_cookie_file
+    env_cookie_file = os.environ.get("YT_DLP_COOKIES")
+    cookie_file = env_cookie_file or config_cookie_file
     cookies_from_browser = os.environ.get("YT_DLP_COOKIES_BROWSER") or config_cookies_from_browser
+    if cookie_file and not os.path.exists(cookie_file):
+        if env_cookie_file:
+            raise FileNotFoundError(f"YT_DLP_COOKIES not found at: {cookie_file}")
+        cookie_file = None
+    if not cookie_file:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        for name in ("cookies.txt", "cookies"):
+            candidate = os.path.join(repo_root, name)
+            if os.path.exists(candidate):
+                cookie_file = candidate
+                break
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
     elif cookies_from_browser:
