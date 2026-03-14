@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
@@ -32,6 +33,45 @@ function pythonCandidates() {
   return ["python3", "python"];
 }
 
+function ffmpegBinaryNames() {
+  if (process.platform === "win32") {
+    return ["ffmpeg.exe", "ffprobe.exe"];
+  }
+  return ["ffmpeg", "ffprobe"];
+}
+
+function ffmpegTargetKeys() {
+  if (process.platform === "darwin") {
+    return [`darwin-${process.arch}`, "darwin-universal", "darwin"];
+  }
+  if (process.platform === "win32") {
+    return [`win32-${process.arch}`, "win32"];
+  }
+  return [];
+}
+
+function containsFfmpegBundle(dirPath) {
+  return ffmpegBinaryNames().every((name) => fs.existsSync(path.join(dirPath, name)));
+}
+
+function getBundledFfmpegLocation(basePath) {
+  const searchRoots = [
+    path.join(basePath, "ffmpeg"),
+    path.join(basePath, "apps", "desktop", "resources", "ffmpeg")
+  ];
+
+  for (const root of searchRoots) {
+    for (const key of ffmpegTargetKeys()) {
+      const candidate = path.join(root, key);
+      if (containsFfmpegBundle(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function startPythonService({ basePath, port = DEFAULT_PORT }) {
   const scriptPath = path.join(
     basePath,
@@ -41,15 +81,22 @@ async function startPythonService({ basePath, port = DEFAULT_PORT }) {
     "server.py"
   );
   const baseUrl = `http://127.0.0.1:${port}`;
+  const bundledFfmpegLocation =
+    process.env.YT_DLP_FFMPEG_LOCATION || getBundledFfmpegLocation(basePath);
   let lastError = null;
 
   for (const command of pythonCandidates()) {
+    const childEnv = {
+      ...process.env,
+      YT_DOWNLOADER_PORT: String(port),
+      PYTHONUNBUFFERED: "1"
+    };
+    if (bundledFfmpegLocation) {
+      childEnv.YT_DLP_FFMPEG_LOCATION = bundledFfmpegLocation;
+    }
+
     const child = spawn(command, [scriptPath], {
-      env: {
-        ...process.env,
-        YT_DOWNLOADER_PORT: String(port),
-        PYTHONUNBUFFERED: "1"
-      },
+      env: childEnv,
       stdio: ["ignore", "pipe", "pipe"]
     });
 

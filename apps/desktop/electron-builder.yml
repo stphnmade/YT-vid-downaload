@@ -1,6 +1,7 @@
 appId: com.steph.yt-download-app
 productName: YT Download App
 asar: false
+beforePack: "./scripts/beforePack.js"
 directories:
   output: dist
 files:
@@ -11,6 +12,8 @@ files:
 extraResources:
   - from: "../services/downloader"
     to: "services/downloader"
+  - from: "resources/ffmpeg"
+    to: "ffmpeg"
 mac:
   target:
     - dmg

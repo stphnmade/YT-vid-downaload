@@ -185,6 +185,14 @@ def _load_cookie_settings_from_config() -> tuple[str | None, str | None]:
     return cookiefile, cookiesfrombrowser
 
 
+def _resolve_ffmpeg_location() -> str | None:
+    for key in ("YT_DLP_FFMPEG_LOCATION", "FFMPEG_BINARY"):
+        value = (os.environ.get(key) or "").strip()
+        if value:
+            return value
+    return None
+
+
 def _run_with_ytdlp(job: DownloadJob) -> None:
     def progress_hook(data: dict) -> None:
         if job.cancel_event.is_set():
@@ -236,6 +244,10 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
         detected_browser = _detect_cookies_browser()
         if detected_browser:
             ydl_opts["cookiesfrombrowser"] = (detected_browser,)
+
+    ffmpeg_location = _resolve_ffmpeg_location()
+    if ffmpeg_location:
+        ydl_opts["ffmpeg_location"] = ffmpeg_location
 
     if job.format == "mp3":
         ydl_opts.update(

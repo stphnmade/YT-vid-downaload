@@ -16,5 +16,16 @@ env/
 .DS_Store
 Thumbs.db
 services/downloader/.secrets/
+apps/desktop/resources/ffmpeg/**
+!apps/desktop/resources/ffmpeg/
+!apps/desktop/resources/ffmpeg/README.md
+!apps/desktop/resources/ffmpeg/*/
+!apps/desktop/resources/ffmpeg/*/.gitkeep
+tmp/pydeps/
+tmp/smoke-downloads/
+tmp/qa-downloads/
+tmp/qa-downloads-live/
+tmp/qa-downloads-latest/
+tmp/qa-downloads-final/
 cookies.txt
 cookies
