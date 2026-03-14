@@ -10,6 +10,13 @@ from yt_dlp.utils import DownloadCancelled
 
 from models import DownloadJobView
 
+COOKIE_IMPORT_RECOVERABLE_ERRORS = (
+    "Could not copy Chrome cookie database",
+    "Could not copy Edge cookie database",
+    "Could not copy Chromium cookie database",
+    "'NoneType' object has no attribute 'decode'",
+)
+
 
 class DownloadJob:
     def __init__(self, url: str, format_name: str, output_dir: str) -> None:
@@ -193,6 +200,30 @@ def _resolve_ffmpeg_location() -> str | None:
     return None
 
 
+def _truthy_env(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _should_auto_detect_browser_cookies() -> bool:
+    return _truthy_env("YT_DLP_AUTO_BROWSER_COOKIES")
+
+
+def _is_recoverable_cookie_import_error(exc: Exception) -> bool:
+    message = str(exc)
+    return any(fragment in message for fragment in COOKIE_IMPORT_RECOVERABLE_ERRORS)
+
+
+def _download_with_yt_dlp(job: DownloadJob, ydl_opts: dict) -> None:
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(job.url, download=True)
+        job.title = info.get("title")
+        filepath = ydl.prepare_filename(info)
+        if job.format == "mp3":
+            filepath = f"{os.path.splitext(filepath)[0]}.mp3"
+        job.filepath = filepath
+        job.filename = os.path.basename(filepath)
+
+
 def _run_with_ytdlp(job: DownloadJob) -> None:
     def progress_hook(data: dict) -> None:
         if job.cancel_event.is_set():
@@ -225,10 +256,12 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
     env_cookie_file = os.environ.get("YT_DLP_COOKIES")
     cookie_file = env_cookie_file or config_cookie_file
     cookies_from_browser = os.environ.get("YT_DLP_COOKIES_BROWSER") or config_cookies_from_browser
+
     if cookie_file and not os.path.exists(cookie_file):
         if env_cookie_file:
             raise FileNotFoundError(f"YT_DLP_COOKIES not found at: {cookie_file}")
         cookie_file = None
+
     if not cookie_file:
         repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         for name in ("cookies.txt", "cookies"):
@@ -236,11 +269,12 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
             if os.path.exists(candidate):
                 cookie_file = candidate
                 break
+
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
     elif cookies_from_browser:
         ydl_opts["cookiesfrombrowser"] = (cookies_from_browser,)
-    else:
+    elif _should_auto_detect_browser_cookies():
         detected_browser = _detect_cookies_browser()
         if detected_browser:
             ydl_opts["cookiesfrombrowser"] = (detected_browser,)
@@ -270,14 +304,15 @@ def _run_with_ytdlp(job: DownloadJob) -> None:
             }
         )
 
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(job.url, download=True)
-        job.title = info.get("title")
-        filepath = ydl.prepare_filename(info)
-        if job.format == "mp3":
-            filepath = f"{os.path.splitext(filepath)[0]}.mp3"
-        job.filepath = filepath
-        job.filename = os.path.basename(filepath)
+    try:
+        _download_with_yt_dlp(job, ydl_opts)
+    except Exception as exc:
+        if "cookiesfrombrowser" not in ydl_opts or not _is_recoverable_cookie_import_error(exc):
+            raise
+
+        retry_opts = dict(ydl_opts)
+        retry_opts.pop("cookiesfrombrowser", None)
+        _download_with_yt_dlp(job, retry_opts)
 
     job.status = "completed"
     job.percent = 100
