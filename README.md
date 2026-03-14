@@ -60,6 +60,27 @@ Or manually:
 From `apps/desktop`:
 `npm run dist`
 
+## GitHub download release
+Use GitHub Releases for downloadable desktop installers. GitHub Packages is not
+the right distribution surface for this app.
+
+Recommended pre-release gate:
+1. `python -m unittest discover -s services/downloader/tests -p "test*.py"`
+2. `python scripts/smoke_downloads.py --format mp4 --format mp3 --ffmpeg-location /path/to/ffmpeg-bin`
+3. `cd apps/desktop && npm install && npm run dist`
+
+Automated GitHub release flow:
+1. Open the `release` GitHub Actions workflow.
+2. Enter a tag like `v0.1.0`.
+3. Let the workflow run backend tests, a live MP4/MP3 smoke test, and the Windows installer build.
+4. Download the generated `.exe` asset from the GitHub Release page.
+
+Current automated publishing target:
+- Windows NSIS installer via GitHub Releases
+
+Current manual publishing target:
+- macOS DMG, until a reproducible CI FFmpeg bundle source is added for macOS
+
 ## Bundled FFmpeg for installers
 Packaged Windows and macOS builds now expect a bundled FFmpeg pair so MP3 support
 works out of the box. The Electron builder hook will fail packaging if the target

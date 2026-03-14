@@ -2,10 +2,62 @@ name: release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v0.1.0
+        required: true
+      release_name:
+        description: Optional release title
+        required: false
+      draft:
+        description: Create the GitHub release as a draft
+        type: boolean
+        default: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  windows-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Release placeholder"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend dependencies
+        run: python -m pip install -r services/downloader/requirements.txt
+      - name: Run backend tests
+        run: python -m unittest discover -s services/downloader/tests -p "test*.py"
+      - name: Install FFmpeg
+        run: choco install ffmpeg --yes
+      - name: Resolve FFmpeg bundle directory
+        shell: pwsh
+        run: |
+          $ffmpegDir = Get-ChildItem 'C:\ProgramData\chocolatey\lib' -Recurse -Filter ffmpeg.exe |
+            Where-Object { Test-Path (Join-Path $_.Directory.FullName 'ffprobe.exe') } |
+            Select-Object -First 1 -ExpandProperty DirectoryName
+          if (-not $ffmpegDir) {
+            throw 'Unable to locate ffmpeg.exe and ffprobe.exe after Chocolatey install.'
+          }
+          "YT_DLP_FFMPEG_WIN_X64_SOURCE=$ffmpegDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Run live smoke test
+        run: python scripts/smoke_downloads.py --format mp4 --format mp3 --ffmpeg-location "$env:YT_DLP_FFMPEG_WIN_X64_SOURCE"
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: npm install
+      - name: Build Windows installer
+        working-directory: apps/desktop
+        run: npm run dist
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.release_name || inputs.tag }}
+          draft: ${{ inputs.draft }}
+          files: |
+            apps/desktop/dist/*.exe
+            apps/desktop/dist/*.yml
+            apps/desktop/dist/*.blockmap

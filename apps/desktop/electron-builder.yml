@@ -10,7 +10,7 @@ files:
   - "src/preload/**"
   - "package.json"
 extraResources:
-  - from: "../services/downloader"
+  - from: "../../services/downloader"
     to: "services/downloader"
   - from: "resources/ffmpeg"
     to: "ffmpeg"
